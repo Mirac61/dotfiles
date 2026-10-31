@@ -60,17 +60,19 @@ addAerospaceSpaces() {
 	sketchybar --add event aerospace_workspace_change
 	rm -f "${TMPDIR:-/tmp/}sketchybar_aerospace_state"
 
-	for sid in "${SPACES[@]}"; do
+	while IFS='|' read -r sid disp_id; do
+		[[ -z "$sid" ]] && continue
 		space=("${dummy_space[@]}")
 		space+=(
 			icon="$sid"
 			click_script="export PATH=$PATH; aerospace workspace $sid 2>/dev/null; $RELPATH/plugins/spaces/aerospace/script-space.sh $sid"
 			drawing=on
 		)
+		[[ -n "$disp_id" ]] && space+=(display="$disp_id")
 
 		sketchybar --add item space.$sid left \
 			--set space.$sid "${space[@]}"
-	done
+	done < <(aerospace list-workspaces --all --format '%{workspace}|%{monitor-appkit-nsscreen-screens-id}' 2>/dev/null)
 
 	separator+=(
 		script="export PATH=$PATH; $RELPATH/plugins/spaces/aerospace/watcher.sh"
@@ -80,7 +82,7 @@ addAerospaceSpaces() {
 
 	sketchybar --add item separator left \
 		--set separator "${separator[@]}" \
-		--subscribe separator aerospace_workspace_change front_app_switched space_windows_change routine system_woke
+		--subscribe separator aerospace_workspace_change front_app_switched space_windows_change display_change routine system_woke
 
 	"$RELPATH/plugins/spaces/aerospace/script-space.sh" &
 }

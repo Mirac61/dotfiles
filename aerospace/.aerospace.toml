@@ -1,7 +1,13 @@
 # ~/.aerospace.toml
 # Modifier: ctrl+alt (kollidiert nicht mit deutschen Sonderzeichen auf alt)
 config-version = 2
-after-startup-command = []
+after-startup-command = [
+    'exec-and-forget sketchybar',
+]
+exec-on-workspace-change = [
+    '/bin/bash', '-c',
+    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+]
 start-at-login = true
 auto-reload-config = true
 
@@ -17,12 +23,14 @@ key-mapping.preset = 'qwerty'
 # 1-5 = frei, T = Terminal, B = Browser, N = Notizen
 persistent-workspaces = ["1", "2", "3", "4", "5", "T", "B", "N"]
 
-gaps.inner.horizontal = 6
-gaps.inner.vertical   = 6
-gaps.outer.left       = 8
-gaps.outer.bottom     = 10
-gaps.outer.top        = 8
-gaps.outer.right      = 8
+# Platz fuer SketchyBar oben freihalten (32px Bar + 6px Abstand)
+[gaps]
+    inner.horizontal = 6
+    inner.vertical   = 6
+    outer.left       = 8
+    outer.bottom     = 10
+    outer.top        = [{ monitor."Built-in.*" = 8 }, 38]
+    outer.right      = 8
 
 [mode.main.binding]
     # Layout
