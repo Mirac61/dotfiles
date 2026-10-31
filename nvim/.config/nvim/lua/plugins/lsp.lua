@@ -25,6 +25,8 @@ return {
 				"sqls",
 				"templ",
 				"htmx-lsp",
+				"oxlint",
+				"typescript-language-server",
 			}
 			-- Nur auf Anforderung (:LspEnsure) installieren -- ein Registry-Refresh
 			-- bei jedem Start kostet einen Netzwerk-Roundtrip.
@@ -64,6 +66,8 @@ return {
 				"sqls",
 				"templ",
 				"htmx",
+				"oxlint",
+				"ts_ls",
 			})
 		end,
 	},

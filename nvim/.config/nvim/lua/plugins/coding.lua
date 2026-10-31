@@ -18,6 +18,8 @@ return {
 				"templ",
 				"html",
 				"javascript",
+				"typescript",
+				"tsx",
 				"css",
 				"comment",
 				"java",
@@ -29,8 +31,14 @@ return {
 				"json",
 				"bash",
 			}
-			-- Highlighting/Indent laufen auf nvim 0.12 automatisch -- hier nur Parser sicherstellen
+			-- Parser installieren und Tree-sitter-Highlighting für templ aktivieren.
 			require("nvim-treesitter").install(parsers)
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "templ",
+				callback = function(ev)
+					vim.treesitter.start(ev.buf)
+				end,
+			})
 		end,
 	},
 
@@ -78,6 +86,10 @@ return {
 				markdown = { "prettier" },
 				json = { "prettier" },
 				yaml = { "prettier" },
+				typescript = { "prettier" },
+				typescriptreact = { "prettier" },
+				javascript = { "prettier" },
+				javascriptreact = { "prettier" },
 			},
 			format_on_save = function(bufnr)
 				-- Markdown im Vault nicht ungefragt umformatieren
