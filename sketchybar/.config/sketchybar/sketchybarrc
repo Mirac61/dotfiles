@@ -1,0 +1,244 @@
+#!/bin/bash
+
+##
+# Utility bar core script
+# This is the main script used for the config which calls and sources all the helpers and Plugins / Items.
+##
+
+# --- Sourcing of core scripts + Initial setup config ---
+RELPATH="$(cd "$(dirname "$0")" && pwd)"
+OS_VERSION="$(sw_vers -productVersion)"
+
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH"
+mkdir -p "${TMPDIR}sketchybar"
+
+## Optional user configuration
+if [[ -n "$SKETCHYBAR_CONFIG" && -f "$SKETCHYBAR_CONFIG" ]]; then
+	# shellcheck disable=SC1090
+	source "$SKETCHYBAR_CONFIG"
+elif [[ -f "$RELPATH/config.sh" ]]; then
+	# shellcheck disable=SC1091
+	source "$RELPATH/config.sh"
+fi
+
+## Fallback defaults if variables unset
+: "${NOTCH_WIDTH:=180}"
+: "${MUSIC_INFO_WIDTH:=80}"
+: "${CPU_UPDATE_FREQ:=2}"
+: "${MENUBAR_AUTOHIDE:=false}"
+: "${GITHUB_TOKEN:="~/.github_token"}"
+: "${WIFI_UNREDACTOR:="~/Applications/wifi-unredactor.app"}"
+: "${BAR_LOOK:="compact"}"
+: "${BAR_DESIGN:="glass"}"
+: "${HIDE_EMPTY_SPACES:="true"}"
+: "${USER_DISPLAY_MODE:="short"}"
+
+[ ${#MENU_CONTROLS[@]} -eq 0 ] && MENU_CONTROLS=(
+	"Control__Center,Bluetooth"
+)
+
+## WM detect if not already defined
+if [[ -z "$WINDOW_MANAGER" ]]; then
+	if command -v rift-cli >/dev/null; then WINDOW_MANAGER="rift"; fi
+	if command -v aerospace >/dev/null; then WINDOW_MANAGER="aerospace"; fi
+	if command -v yabai >/dev/null; then WINDOW_MANAGER="yabai"; fi
+fi
+
+## Helpers sourcing
+source "$RELPATH/log_handler.sh"
+source "$RELPATH/set_colors.sh"
+source "$RELPATH/icon_map.sh"
+source "$RELPATH/add_separator.sh"
+
+# --- Bar & Default Properties ---
+sendLog "=== Loading sketchybar config (Theme=$COLOR_SCHEME, Design=$BAR_DESIGN, Look=$BAR_LOOK)... ===" "info"
+
+if [[ -z "$WINDOW_MANAGER" ]]; then
+	sendErr "No Window-Manager detected, defaulting to yabai." "info"
+	WINDOW_MANAGER="yabai"
+fi
+
+command -v 'menubar' 2>/dev/null 1>&2 || sendWarn "Binary \`menubar\` not in \$PATH, using bundled version" "debug"
+menubarImportCmd=$(if command -v 'menubar' 2>/dev/null 1>&2; then command -v 'menubar'; else echo "$RELPATH/menubar"; fi)
+
+FONT="SF Pro"
+OUTER_PADDINGS=4
+INNER_PADDINGS=5
+X_BAR_PADDING=10
+
+case "${BAR_LOOK}" in
+"plain")
+	ZONE_TARGET_HEIGHT=26
+	BAR_MARGIN=5
+	;;
+"compact"|*)
+	ZONE_TARGET_HEIGHT=24
+	BAR_MARGIN=4
+	;;
+esac
+
+if [[ "$(echo "$OS_VERSION" | awk -F. '{print $1}')" -gt 15 ]]; then
+	BAR_CORNER_RADIUS=14
+else
+	BAR_CORNER_RADIUS=12
+fi
+
+export ZONE_CORNER_RADIUS=$(($BAR_CORNER_RADIUS - 4))
+[[ $ZONE_CORNER_RADIUS -lt 6 ]] && ZONE_CORNER_RADIUS=6
+
+# --- Design Preset Configuration (glass | minimal | islands) ---
+# All designs are free of inner group boxes (ZONE_DRAWING="off").
+# Only the active workspace has a pill highlight.
+case "${BAR_DESIGN}" in
+"islands"|"transparent")
+	# Subtle Tinted Top Strip: Exakt auf Notch-Höhe (32pt), leichter Blur (8) & dezente Tönung
+	BAR_HEIGHT=32
+	ACTUAL_BAR_COLOR="0x68101014"
+	ACTUAL_BAR_BORDER_WIDTH=0
+	ACTUAL_BAR_BLUR=8
+	ACTUAL_BAR_MARGIN=0
+	ACTUAL_BAR_RADIUS=0
+	ZONE_DRAWING="off"
+	export ZONE_HEIGHT=$ZONE_TARGET_HEIGHT
+	ZONE_BORDER_WIDTH=0
+	ZONE_BORDER_COLOR=$TRANSPARENT
+	ZONE_BG_COLOR=$TRANSPARENT
+	ZONE_BLUR=0
+	;;
+"capsules")
+	# 1 Capsule Left & 1 Capsule Right on transparent background
+	BAR_HEIGHT=32
+	ACTUAL_BAR_COLOR=$TRANSPARENT
+	ACTUAL_BAR_BORDER_WIDTH=0
+	ACTUAL_BAR_BLUR=0
+	ACTUAL_BAR_MARGIN=0
+	ACTUAL_BAR_RADIUS=0
+	ZONE_DRAWING="on"
+	export ZONE_HEIGHT=$ZONE_TARGET_HEIGHT
+	ZONE_BORDER_WIDTH=1
+	ZONE_BORDER_COLOR=$HIGH_MED
+	ZONE_BG_COLOR=$OVERLAY
+	ZONE_BLUR=10
+	;;
+"minimal")
+	# Minimal Flat: Edge-to-edge sleek bar without border or inner boxes (Notch height 32pt)
+	BAR_HEIGHT=32
+	ACTUAL_BAR_COLOR="$BAR_COLOR"
+	ACTUAL_BAR_BORDER_WIDTH=0
+	ACTUAL_BAR_BLUR=8
+	ACTUAL_BAR_MARGIN=0
+	ACTUAL_BAR_RADIUS=0
+	ZONE_DRAWING="off"
+	export ZONE_HEIGHT=$ZONE_TARGET_HEIGHT
+	ZONE_BORDER_WIDTH=0
+	ZONE_BORDER_COLOR=$TRANSPARENT
+	ZONE_BG_COLOR=$TRANSPARENT
+	ZONE_BLUR=0
+	;;
+"glass"|*)
+	# Modern Glass Bar: Continuous translucent glass bar without inner boxes (Notch height 32pt)
+	BAR_HEIGHT=32
+	ACTUAL_BAR_COLOR="$BAR_COLOR"
+	ACTUAL_BAR_BORDER_WIDTH=1
+	ACTUAL_BAR_BLUR=10
+	ACTUAL_BAR_MARGIN=$BAR_MARGIN
+	ACTUAL_BAR_RADIUS=$BAR_CORNER_RADIUS
+	ZONE_DRAWING="off"
+	export ZONE_HEIGHT=$ZONE_TARGET_HEIGHT
+	ZONE_BORDER_WIDTH=0
+	ZONE_BORDER_COLOR=$TRANSPARENT
+	ZONE_BG_COLOR=$TRANSPARENT
+	ZONE_BLUR=0
+	;;
+esac
+
+bar=(
+	height=$BAR_HEIGHT
+	y_offset=0
+	margin=$ACTUAL_BAR_MARGIN
+	topmost=everything
+	sticky=on
+	position=top
+	padding_left=$X_BAR_PADDING
+	padding_right=$X_BAR_PADDING
+	color="$ACTUAL_BAR_COLOR"
+	border_width=$ACTUAL_BAR_BORDER_WIDTH
+	border_color=$BORDER_COLOR
+	corner_radius=$ACTUAL_BAR_RADIUS
+	blur_radius=$ACTUAL_BAR_BLUR
+	notch_width=$NOTCH_WIDTH
+)
+
+defaults=(
+	updates=when_shown
+	icon.font="$FONT:Regular:14.0"
+	icon.color=$ICON_COLOR
+	padding_left=$OUTER_PADDINGS
+	padding_right=$OUTER_PADDINGS
+	icon.padding_left=$INNER_PADDINGS
+	icon.padding_right=$INNER_PADDINGS
+	label.font="$FONT:Semibold:12.5"
+	label.color=$LABEL_COLOR
+	label.padding_left=$INNER_PADDINGS
+	label.padding_right=$INNER_PADDINGS
+	background.corner_radius=$ZONE_CORNER_RADIUS
+	popup.y_offset=6
+	popup.background.border_width=1
+	popup.background.corner_radius=10
+	popup.background.border_color=$POPUP_BORDER_COLOR
+	popup.background.color=$POPUP_BACKGROUND_COLOR
+	popup.blur_radius=24
+	popup.background.shadow.drawing=on
+)
+
+zones=(
+	background.drawing=$ZONE_DRAWING
+	background.height=$ZONE_HEIGHT
+	background.border_width=$ZONE_BORDER_WIDTH
+	background.border_color=$ZONE_BORDER_COLOR
+	background.color=$ZONE_BG_COLOR
+	background.corner_radius=$ZONE_CORNER_RADIUS
+	blur_radius=$ZONE_BLUR
+)
+
+sketchybar --bar "${bar[@]}"
+sketchybar --default "${defaults[@]}"
+
+# --- Bar Items ---
+sendLog "Starting sourcing of Items..." "vomit"
+
+source "$RELPATH/sketchy-items/logo.sh"
+source "$RELPATH/sketchy-items/spaces.sh"
+source "$RELPATH/sketchy-items/frontapp.sh"
+source "$RELPATH/sketchy-items/calendar.sh"
+source "$RELPATH/sketchy-items/mic.sh"
+source "$RELPATH/sketchy-items/volume.sh"
+source "$RELPATH/sketchy-items/battery.sh"
+source "$RELPATH/sketchy-items/wifi.sh"
+source "$RELPATH/sketchy-items/display.sh"
+source "$RELPATH/sketchy-items/more-menu.sh"
+source "$RELPATH/sketchy-items/packages.sh"
+source "$RELPATH/sketchy-items/currentuser.sh"
+source "$RELPATH/sketchy-items/notifications.sh"
+source "$RELPATH/sketchy-items/controls.sh"
+
+source "$RELPATH/sketchy-items/music.sh"
+source "$RELPATH/sketchy-items/cpu.sh"
+
+sendLog "Finished sourcing of Items" "vomit"
+
+# One unified capsule on the left (⌘ + spaces + › + front_app)
+# and one unified capsule on the right (all status items & clock)
+sketchybar --add bracket left_island logo '/space\..*/' separator front_app \
+	--set left_island "${zones[@]}" \
+	--add bracket right_island calendar separator.0 volume volume_icon mic separator.1 battery wifi display separator-more '/moremenu\..*/' "${menuitem[@]}" \
+	--set right_island "${zones[@]}"
+
+sketchybar --update
+
+sendLog "=== Sketchybar configuration loaded ===" "info"
+sketchybar --bar topmost=window
+if command -v sketchybar-toggle >/dev/null 2>&1; then
+	pkill -x sketchybar-toggle 2>/dev/null || true
+	sketchybar-toggle &
+fi
