@@ -134,5 +134,18 @@ return {
 				},
 			},
 		},
+		config = function(_, opts)
+			require("snacks").setup(opts)
+			-- Snacks reicht den vollen Pfad an nvim-web-devicons weiter, der
+			-- Icon-Lookup erwartet aber den reinen Dateinamen. Sonst bekommen
+			-- "Dockerfile", "LICENSE" usw. nur das generische Icon.
+			local icon = Snacks.util.icon
+			Snacks.util.icon = function(name, cat, o)
+				if cat == "file" and type(name) == "string" then
+					name = vim.fs.basename(name)
+				end
+				return icon(name, cat, o)
+			end
+		end,
 	},
 }
