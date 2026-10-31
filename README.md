@@ -2,7 +2,7 @@
 
 Meine macOS-Entwicklungsumgebung und System-Konfiguration für **Neovim**, **tmux**, **Zellij**, **AeroSpace** und **SketchyBar** – verwaltet über ein zentrales `install.sh`-Skript (kompatibel mit GNU Stow und direkten Symlinks).
 
-![Neovim-Dashboard](docs/images/neovim-dashboard.png)
+![Desktop-Setup mit SketchyBar, AeroSpace und Neovim](docs/images/desktop-setup.png)
 
 ## Inhalt
 
@@ -22,7 +22,7 @@ Meine macOS-Entwicklungsumgebung und System-Konfiguration für **Neovim**, **tmu
 Über das mitgelieferte `install.sh`-Skript werden vorhandene Konfigurationen automatisch unter `~/.dotfiles-backup/` gesichert, alle Symlinks eingerichtet und auf Wunsch alle benötigten Homebrew-Pakete installiert:
 
 ```sh
-git clone https://github.com/Mirac61/nvim-config.git ~/dotfiles
+git clone https://github.com/Mirac61/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 # Interaktive Installation (fragt nach Homebrew-Paketen & setzt alle Symlinks)
@@ -91,6 +91,8 @@ Language Server (unter anderem `gopls`, `clangd`, `lua_ls`, `marksman`) werden
 ---
 
 ## Dashboard-Motive (Neovim)
+
+![Neovim-Dashboard](docs/images/neovim-dashboard.png)
 
 Es gibt zwölf Motive im japanischen Nacht- und Schrein-Stil: Mond, Koi, Torii,
 Pagode, Kirschblüten- und Gedenklaternen, Katzen, Higanbana, Bambuswald mit
