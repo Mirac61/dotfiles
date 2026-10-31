@@ -2,7 +2,10 @@
 
 Meine macOS-Entwicklungsumgebung und System-Konfiguration für **Neovim**, **tmux**, **Zellij**, **AeroSpace** und **SketchyBar** – verwaltet über ein zentrales `install.sh`-Skript (kompatibel mit GNU Stow und direkten Symlinks).
 
-![Desktop-Setup mit SketchyBar, AeroSpace und Neovim](docs/images/desktop-setup.png)
+<p align="center">
+  <img src="docs/images/desktop-setup.png" width="49%" alt="Neovim Dashboard mit SketchyBar und AeroSpace" />
+  <img src="docs/images/neovim-editor.png" width="49%" alt="Neovim Editor Ansicht" />
+</p>
 
 ## Inhalt
 
