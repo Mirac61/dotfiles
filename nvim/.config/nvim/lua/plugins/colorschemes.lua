@@ -68,6 +68,7 @@ local ghostty_themes = {
   tokyonight = "TokyoNight",
   ["rose-pine"] = "Rose Pine",
   nightfox = "Nightfox",
+  carbonfox = "Carbonfox",
   everforest = "Everforest Dark Hard",
   vercel = "Vercel",
   nord = "Nord",
@@ -100,6 +101,7 @@ end
 -- exposed in that picker and therefore cannot leave the bars out of sync.
 local tmux_themes = {
   vercel = "vercel",
+  carbonfox = "carbonfox",
   ["kanagawa-dragon"] = "kanagawa/dragon",
   ["kanagawa-wave"] = "kanagawa/wave",
   ["kanagawa-lotus"] = "kanagawa/lotus",
@@ -138,10 +140,38 @@ local function sync_tmux()
   end, 100)
 end
 
+-- Eingebaute Zellij-Themes. Vercel/Carbonfox gibt es dort nicht, die lassen Zellij unveraendert.
+local zellij_themes = {
+  kanagawa = "kanagawa",
+  tokyonight = "tokyo-night",
+  nightfox = "nightfox",
+  everforest = "everforest-dark",
+  nord = "nord",
+  gruvbox = "gruvbox-dark",
+}
+
+-- Zellij laedt config.kdl bei Aenderung selbst neu.
+local function sync_zellij()
+  local theme = zellij_themes[(active() or ""):match("^[^-]+")]
+  local path = vim.fn.expand("~/.config/zellij/config.kdl")
+  if not theme or vim.fn.filereadable(path) == 0 then
+    return
+  end
+  local lines = vim.fn.readfile(path)
+  for i, line in ipairs(lines) do
+    if line:match('^theme "') then
+      lines[i] = 'theme "' .. theme .. '"'
+      vim.fn.writefile(lines, path)
+      return
+    end
+  end
+end
+
 vim.api.nvim_create_autocmd("ColorScheme", {
   callback = function()
     sync_ghostty()
     sync_tmux()
+    sync_zellij()
   end,
 })
 
@@ -189,6 +219,7 @@ table.insert(spec, {
       function()
         local choices = {
           { label = "Vercel", colorscheme = "vercel" },
+          { label = "Carbonfox", colorscheme = "carbonfox" },
           { label = "Kanagawa Dragon", colorscheme = "kanagawa-dragon" },
           { label = "Tokyo Night", colorscheme = "tokyonight-night" },
           { label = "Nord", colorscheme = "nord" },

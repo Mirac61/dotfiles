@@ -30,6 +30,22 @@ case "$theme" in
       "alert:#f5a623"
     )
     ;;
+  carbonfox)
+    base_theme="kanagawa/dragon"
+    colors=(
+      "text:#f2f4f8"
+      "bg-bar:#0c0c0c"
+      "bg-pane:#161616"
+      "highlight:#252525"
+      "selection:#2a2a2a"
+      "info:#33b1ff"
+      "accent:#78a9ff"
+      "notice:#08bdba"
+      "error:#ee5396"
+      "muted:#6e6f70"
+      "alert:#be95ff"
+    )
+    ;;
   kanagawa/dragon)
     base_theme="$theme"
     colors=("accent:#8ba4b0" "selection:#3b5363")
