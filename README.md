@@ -1,10 +1,9 @@
 # Miracs Dotfiles
 
-Meine macOS-Entwicklungsumgebung und System-Konfiguration für **Neovim**, **tmux**, **Zellij**, **AeroSpace** und **SketchyBar** – verwaltet über ein zentrales `install.sh`-Skript (kompatibel mit GNU Stow und direkten Symlinks).
+Meine macOS-Entwicklungsumgebung und System-Konfiguration für **Neovim**, **tmux**, **Zellij**, **AeroSpace** und **SketchyBar** (plus VSCodium-Settings) – jedes Modul lässt sich einzeln per `install.sh` installieren, unter macOS und Linux.
 
 <p align="center">
-  <img src="docs/images/desktop-setup.png" width="49%" alt="Neovim Dashboard mit SketchyBar und AeroSpace" />
-  <img src="docs/images/neovim-editor.png" width="49%" alt="Neovim Editor Ansicht" />
+  <img src="docs/images/desktop-setup.png" width="100%" alt="Neovim Dashboard mit SketchyBar und AeroSpace" />
 </p>
 
 ## Inhalt
@@ -16,37 +15,73 @@ Meine macOS-Entwicklungsumgebung und System-Konfiguration für **Neovim**, **tmu
 | `zellij`     | `~/.config/zellij`        | Zellij Terminal-Multiplexer Konfiguration (`config.kdl`)                     |
 | `aerospace`  | `~/.aerospace.toml`       | AeroSpace Tiling Window Manager Konfiguration (`ctrl+alt` Keybindings)       |
 | `sketchybar` | `~/.config/sketchybar`    | Minimalistische macOS Statusbar mit interaktiven Popups & Theme-Switcher     |
-| `vscodium` | `settings.json` + `extensions.txt` | VSCodium-Settings und Extension-Liste (macOS und Linux) |
+| `vscodium` | `…/VSCodium/User/settings.json` | VSCodium-Settings und Extension-Liste (macOS und Linux) |
 | `tools`      | –                         | Generator für die Neovim-Dashboard-Motive                                    |
 
 ---
 
-## Schnellstart (Automatische Installation)
-
-Über das mitgelieferte `install.sh`-Skript werden vorhandene Konfigurationen automatisch unter `~/.dotfiles-backup/` gesichert, alle Symlinks eingerichtet und auf Wunsch alle benötigten Homebrew-Pakete installiert:
+## Installation
+Das Repo einmal klonen. Danach wählst du, **welche** Module du willst. Es wird nur verlinkt, was du angibst. Bestehende Configs werden vorher nach `~/.dotfiles-backup/` gesichert.
 
 ```sh
 git clone https://github.com/Mirac61/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-
-# Interaktive Installation (fragt nach Homebrew-Paketen & setzt alle Symlinks)
-./install.sh
-
-# Oder direkt nur alle Symlinks setzen (ohne Paket-Abfrage):
-./install.sh --link-only
-
-# Oder nur einzelne Module verlinken:
-./install.sh nvim zellij aerospace sketchybar
 ```
 
-Alternativ kann jedes Modul auch einzeln mit **GNU Stow** verlinkt werden:
+### Nur einzelne Module (z. B. nur Neovim)
+
+Nur Neovim:
 
 ```sh
-stow --target="$HOME" nvim tmux zellij aerospace sketchybar
+./install.sh nvim
+```
+
+Neovim und VSCodium:
+
+```sh
+./install.sh nvim vscodium
+```
+
+### Auswahlmenü
+
+Module nummeriert auswählen, Enter wählt alle:
+
+```sh
+./install.sh
+```
+
+### Weitere Optionen
+
+Alles verlinken, inklusive Homebrew-Pakete (nur macOS):
+
+```sh
+./install.sh --all
+```
+
+Alle Module verlinken, ohne Pakete:
+
+```sh
+./install.sh --link-only
+```
+
+### Module und Plattformen
+
+| Modul        | macOS | Linux | Hinweis                                                           |
+| ------------ | :---: | :---: | ----------------------------------------------------------------- |
+| `nvim`       |   ✓   |   ✓   | Neovim selbst muss installiert sein (`brew`/Paketmanager)         |
+| `tmux`       |   ✓   |   ✓   |                                                                   |
+| `zellij`     |   ✓   |   ✓   |                                                                   |
+| `vscodium`   |   ✓   |   ✓   | Verlinkt `settings.json`, installiert Extensions aus `extensions.txt`, falls `codium` im PATH ist |
+| `aerospace`  |   ✓   |   –   | nur macOS                                                         |
+| `sketchybar` |   ✓   |   –   | nur macOS                                                         |
+
+VSCodium-Extensions neu exportieren:
+
+```sh
+codium --list-extensions > vscodium/extensions.txt
 ```
 
 ---
-
 ## SketchyBar
 
 Minimalistische, schnelle macOS-Statusleiste passend zu AeroSpace:
@@ -102,7 +137,14 @@ Es gibt zwölf Motive im japanischen Nacht- und Schrein-Stil: Mond, Koi, Torii,
 Pagode, Kirschblüten- und Gedenklaternen, Katzen, Higanbana, Bambuswald mit
 Glühwürmchen, Kitsune-Maske und Samurai.
 
+Pillow installieren:
+
 ```sh
 python3 -m pip install Pillow
+```
+
+Motive generieren:
+
+```sh
 python3 tools/dashboard_art_gen.py
 ```
