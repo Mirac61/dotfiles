@@ -3,10 +3,10 @@ set -euo pipefail
 
 ##
 # Miracs Dotfiles Installer
-# Modules: nvim, tmux, zellij, aerospace, sketchybar
+# Modules: nvim, tmux, zellij, vscodium, aerospace (macOS), sketchybar (macOS)
 #
 # Usage:
-#   ./install.sh               # Interactive installation (Homebrew + Symlinks)
+#   ./install.sh               # Interactive: Module per Nummer auswählen
 #   ./install.sh --all         # Unattended full setup (Homebrew + Symlinks)
 #   ./install.sh --link-only   # Only create backups & symlinks
 #   ./install.sh nvim zellij   # Only link specific modules
@@ -14,7 +14,10 @@ set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date '+%Y%m%d_%H%M%S')"
-ALL_MODULES=("nvim" "tmux" "zellij" "aerospace" "sketchybar")
+OS="$(uname -s)"
+ALL_MODULES=("nvim" "tmux" "zellij" "vscodium")
+# aerospace/sketchybar gibt es nur auf macOS
+[[ "$OS" == "Darwin" ]] && ALL_MODULES+=("aerospace" "sketchybar")
 
 # Colors
 GREEN='\033[0;32m'
@@ -67,10 +70,21 @@ link_module() {
 	"zellij")
 		link_item "$DOTFILES_DIR/zellij/.config/zellij" "$HOME/.config/zellij"
 		;;
+	"vscodium")
+		local vdir="$HOME/.config/VSCodium/User"
+		[[ "$OS" == "Darwin" ]] && vdir="$HOME/Library/Application Support/VSCodium/User"
+		link_item "$DOTFILES_DIR/vscodium/settings.json" "$vdir/settings.json"
+		if command -v codium >/dev/null 2>&1; then
+			info "Installiere VSCodium-Extensions..."
+			while read -r ext; do codium --install-extension "$ext" >/dev/null 2>&1 || warn "Extension fehlgeschlagen: $ext"; done <"$DOTFILES_DIR/vscodium/extensions.txt"
+		fi
+		;;
 	"aerospace")
+		[[ "$OS" == "Darwin" ]] || { warn "aerospace nur auf macOS"; return; }
 		link_item "$DOTFILES_DIR/aerospace/.aerospace.toml" "$HOME/.aerospace.toml"
 		;;
 	"sketchybar")
+		[[ "$OS" == "Darwin" ]] || { warn "sketchybar nur auf macOS"; return; }
 		link_item "$DOTFILES_DIR/sketchybar/.config/sketchybar" "$HOME/.config/sketchybar"
 		;;
 	*)
@@ -80,8 +94,8 @@ link_module() {
 }
 
 install_homebrew_deps() {
-	if ! command -v brew >/dev/null 2>&1; then
-		warn "Homebrew ist nicht installiert. Überspringe Paket-Installation."
+	if [[ "$OS" != "Darwin" ]] || ! command -v brew >/dev/null 2>&1; then
+		warn "Kein macOS/Homebrew. Überspringe Paket-Installation."
 		return
 	fi
 
@@ -178,14 +192,32 @@ elif [[ "$MODE" == "custom" ]]; then
 	done
 	post_install_hooks
 else
-	read -rp "Möchtest du fehlende Homebrew-Pakete prüfen/installieren? [j/N]: " brew_ans
-	if [[ "$brew_ans" =~ ^[jJyY]$ ]]; then
-		install_homebrew_deps
+	echo ""
+	echo "Welche Module sollen verlinkt werden?"
+	for i in "${!ALL_MODULES[@]}"; do
+		printf "  %d) %s\n" "$((i + 1))" "${ALL_MODULES[$i]}"
+	done
+	read -rp "Nummern (z. B. '1 4'), Enter = alle: " picks
+	if [[ -n "$picks" ]]; then
+		for n in $picks; do
+			if [[ "$n" =~ ^[0-9]+$ ]] && ((n >= 1 && n <= ${#ALL_MODULES[@]})); then
+				SELECTED_MODULES+=("${ALL_MODULES[$((n - 1))]}")
+			else
+				warn "Ungültige Auswahl ignoriert: $n"
+			fi
+		done
+	else
+		SELECTED_MODULES=("${ALL_MODULES[@]}")
 	fi
 
-	echo ""
-	info "Verlinke Konfigurations-Module (${ALL_MODULES[*]})..."
-	for m in "${ALL_MODULES[@]}"; do
+	if [[ "$OS" == "Darwin" ]]; then
+		read -rp "Fehlende Homebrew-Pakete prüfen/installieren? [j/N]: " brew_ans
+		if [[ "$brew_ans" =~ ^[jJyY]$ ]]; then
+			install_homebrew_deps
+		fi
+	fi
+
+	for m in "${SELECTED_MODULES[@]}"; do
 		link_module "$m"
 	done
 	post_install_hooks

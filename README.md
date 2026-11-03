@@ -16,6 +16,7 @@ Meine macOS-Entwicklungsumgebung und System-Konfiguration für **Neovim**, **tmu
 | `zellij`     | `~/.config/zellij`        | Zellij Terminal-Multiplexer Konfiguration (`config.kdl`)                     |
 | `aerospace`  | `~/.aerospace.toml`       | AeroSpace Tiling Window Manager Konfiguration (`ctrl+alt` Keybindings)       |
 | `sketchybar` | `~/.config/sketchybar`    | Minimalistische macOS Statusbar mit interaktiven Popups & Theme-Switcher     |
+| `vscodium` | `settings.json` + `extensions.txt` | VSCodium-Settings und Extension-Liste (macOS und Linux) |
 | `tools`      | –                         | Generator für die Neovim-Dashboard-Motive                                    |
 
 ---
